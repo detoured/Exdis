@@ -40,15 +40,14 @@ async def on_message(message):
     if message.channel.id in shells and message.content[0] != "!":
         await run_command(message)
 
-    if "test" == message.content.lower():
-        await message.channel.send("test")
-
     await bot.process_commands(message)
 
 
 @bot.command()
 async def start(ctx):
-    global shells
+    if ctx.channel.id in shells:
+        await ctx.send("This command cannot be executed in a shell channel")
+        return
     channel = await ctx.guild.create_text_channel(name="shell")
     await ctx.send(f"{ctx.author.mention} - New shell: {channel.mention}")
     shells.append(channel.id)
@@ -69,6 +68,9 @@ async def stop(ctx):
         await ctx.channel.send("Stopping Exdis")
         sys.exit(0)
 
+
+
+       
 
 
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
