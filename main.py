@@ -3,6 +3,18 @@ from discord.ext import commands
 import logging
 from dotenv import load_dotenv
 import os
+import subprocess
+import sys
+
+async def run_command(message):
+    command = subprocess.run(message.content.split(" "), capture_output=True)
+    if command.returncode == 0:
+        if command.stdout:
+            await message.channel.send(f"```{(command.stdout).decode("utf-8")}```")
+        else:
+            await message.add_reaction("✅")
+    if command.returncode == 1:
+        await message.channel.send(f"```{(command.stderr).decode("utf-8")}```")
 
 load_dotenv()
 token = os.getenv('DISCOED_TOKEN')
@@ -18,10 +30,16 @@ bot = commands.Bot(command_prefix='!',intents=intents)
 async def on_ready():
     print("Ready")
 
+
+shells = []
+
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return 
+
+    if message.channel.id in shells and message.content != "!exit":
+        await run_command(message)
 
     if "test" == message.content.lower():
         await message.channel.send(f"test")
@@ -29,28 +47,26 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
-
-shells = []
-
-shell_number = 0
 @bot.command()
 async def start(ctx):
-    global shell_number
     global shells
-    shell_number += 1
-    channel_name = f"shell {shell_number}"
-    channel = await ctx.guild.create_text_channel(name=channel_name)
-    await ctx.send(f"{ctx.author.mention} - Shell {shell_number}: {channel.mention}")
+    channel = await ctx.guild.create_text_channel(name="shell")
+    await ctx.send(f"{ctx.author.mention} - New shell: {channel.mention}")
     shells.append(channel.id)
 
 @bot.command()
 async def exit(ctx):
     if ctx.channel.id in shells:
-        global shell_number
-        shell_number -= 1
+        shells.remove(ctx.channel.id)
         await ctx.channel.delete()
     else:
         await ctx.send("You are not in a shell channel")
 
+async def stop(ctx):
+    if ctx.channel.id in shells:
+        await ctx.channel.send("You cannot use the stop command in a shell channel")
+    else:
+        sys.exit(0)
 
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
+
