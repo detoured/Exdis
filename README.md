@@ -26,7 +26,7 @@ uv run main.py
 
 ## Usage - In Discord
 
-Create a shell channel:
+Create a shell channel (must be sent in a non shell channel):
  ```
  user: !start
 Exdis: @user - New shell: ⁠#shell
