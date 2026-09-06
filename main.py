@@ -13,7 +13,7 @@ async def run_command(message):
             await message.channel.send(f"```{(command.stdout).decode("utf-8")}```")
         else:
             await message.add_reaction("✅")
-    if command.returncode == 1:
+    else:
         await message.channel.send(f"```{(command.stderr).decode("utf-8")}```")
 
 load_dotenv()
@@ -22,7 +22,6 @@ token = os.getenv('DISCOED_TOKEN')
 handler = logging.FileHandler(filename="bot.log",encoding='utf-8',mode='w')
 intents = discord.Intents.default()
 intents.message_content = True
-intents.members = True
 
 bot = commands.Bot(command_prefix='!',intents=intents)
 
@@ -38,11 +37,11 @@ async def on_message(message):
     if message.author == bot.user:
         return 
 
-    if message.channel.id in shells and message.content != "!exit":
+    if message.channel.id in shells and message.content[0] != "!":
         await run_command(message)
 
     if "test" == message.content.lower():
-        await message.channel.send(f"test")
+        await message.channel.send("test")
 
     await bot.process_commands(message)
 
@@ -60,13 +59,16 @@ async def exit(ctx):
         shells.remove(ctx.channel.id)
         await ctx.channel.delete()
     else:
-        await ctx.send("You are not in a shell channel")
+        await ctx.send("This command cannot be executed outside of a shell channel")
 
+@bot.command()
 async def stop(ctx):
     if ctx.channel.id in shells:
-        await ctx.channel.send("You cannot use the stop command in a shell channel")
+        await ctx.channel.send("This command cannot be executed in a shell channel")
     else:
+        await ctx.channel.send("Stopping Exdis")
         sys.exit(0)
 
-bot.run(token, log_handler=handler, log_level=logging.DEBUG)
 
+
+bot.run(token, log_handler=handler, log_level=logging.DEBUG)
