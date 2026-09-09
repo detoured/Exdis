@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 shells = {}
+commands_list = ["!start","!exit","!stop"]
 
 async def run_command(message, id):
         command = message.content + "\necho __EXDIS_COMMAND_DONE__\n"
@@ -29,7 +30,7 @@ async def run_command(message, id):
 
         result = b"".join(output)
         if result:
-            await message.channel.send(f"```{result.decode('utf-8')}```")
+            await message.channel.send(f"```{result.decode('utf-8').replace("```","``")}```")
         else:
             await message.add_reaction("✅")
 
@@ -44,9 +45,18 @@ def create_shell():
     
     return shell
 
+async def check_role(message):
+    for role in message.author.roles:
+        if(str(role.id) == str(perm_role)):
+            return True
+    await message.channel.send(f"{message.author.mention} You do not have permission to use Exdis")
+    return False
+    
+        
 
 load_dotenv()
 token = os.getenv('DISCOED_TOKEN')
+perm_role = os.getenv('ROLE_ID')
 
 handler = logging.FileHandler(filename="bot.log",encoding='utf-8',mode='w')
 intents = discord.Intents.default()
@@ -65,7 +75,7 @@ async def on_message(message):
     if message.author == bot.user:
         return 
 
-    if message.channel.id in shells and message.content[0] != "!":
+    if message.channel.id in shells and message.content not in commands_list and await check_role(message):
         await run_command(message, message.channel.id)
 
     await bot.process_commands(message)
@@ -73,37 +83,41 @@ async def on_message(message):
 
 @bot.command()
 async def start(ctx):
-    if ctx.channel.id in shells:
-        await ctx.send("This command cannot be executed in a shell channel")
-        return
-    channel = await ctx.guild.create_text_channel(name="shell")
-    await ctx.send(f"{ctx.author.mention} - New shell: {channel.mention}")
-    shells[channel.id] = create_shell()
+    if await check_role(ctx):
+        if ctx.channel.id in shells:
+            await ctx.send("This command cannot be executed in a shell channel")
+            return
+        channel = await ctx.guild.create_text_channel(name="shell")
+        await ctx.send(f"{ctx.author.mention} - New shell: {channel.mention}")
+        shells[channel.id] = create_shell()
 
 @bot.command()
 async def exit(ctx):
-    if ctx.channel.id in shells:
-        shells[ctx.channel.id].terminate()
-        
-        try:
-            shells[ctx.channel.id].wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            shells[ctx.channel.id].kill()
+    if await check_role(ctx):
+        if ctx.channel.id in shells:
+
+            shells[ctx.channel.id].terminate()
             
-        del shells[ctx.channel.id]
-        await ctx.channel.delete()
+            try:
+                shells[ctx.channel.id].wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                shells[ctx.channel.id].kill()
+                
+            del shells[ctx.channel.id]
+            await ctx.channel.delete()
 
       
-    else:
-        await ctx.send("This command cannot be executed outside of a shell channel")
+        else:
+            await ctx.send("This command cannot be executed outside of a shell channel")
 
 @bot.command()
 async def stop(ctx):
-    if ctx.channel.id in shells:
-        await ctx.channel.send("This command cannot be executed in a shell channel")
-    else:
-        await ctx.channel.send("Stopping Exdis")
-        sys.exit(0)
+    if await check_role(ctx):
+        if ctx.channel.id in shells:
+            await ctx.channel.send("This command cannot be executed in a shell channel")
+        else:
+            await ctx.channel.send("Stopping Exdis")
+            sys.exit(0)
 
 
 
