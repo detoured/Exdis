@@ -6,15 +6,44 @@ import os
 import subprocess
 import sys
 
-async def run_command(message):
-    command = subprocess.run(message.content.split(" "), capture_output=True)
-    if command.returncode == 0:
-        if command.stdout:
-            await message.channel.send(f"```{(command.stdout).decode("utf-8")}```")
+shells = {}
+
+async def run_command(message, id):
+        command = message.content + "\necho __EXDIS_COMMAND_DONE__\n"
+
+        shells[id].stdin.write(command.encode())
+        shells[id].stdin.flush()
+
+        output = []
+
+        while True:
+            line = shells[id].stdout.readline()
+
+            if not line:
+                break
+
+            if line.strip() == b"__EXDIS_COMMAND_DONE__":
+                break
+
+            output.append(line)
+
+        result = b"".join(output)
+        if result:
+            await message.channel.send(f"```{result.decode('utf-8')}```")
         else:
             await message.add_reaction("✅")
-    else:
-        await message.channel.send(f"```{(command.stderr).decode("utf-8")}```")
+
+def create_shell():
+    shell = subprocess.Popen(
+    ["/bin/bash"],
+    stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    shell=True
+    )
+    
+    return shell
+
 
 load_dotenv()
 token = os.getenv('DISCOED_TOKEN')
@@ -30,7 +59,6 @@ async def on_ready():
     print("Ready")
 
 
-shells = []
 
 @bot.event
 async def on_message(message):
@@ -38,7 +66,7 @@ async def on_message(message):
         return 
 
     if message.channel.id in shells and message.content[0] != "!":
-        await run_command(message)
+        await run_command(message, message.channel.id)
 
     await bot.process_commands(message)
 
@@ -50,13 +78,22 @@ async def start(ctx):
         return
     channel = await ctx.guild.create_text_channel(name="shell")
     await ctx.send(f"{ctx.author.mention} - New shell: {channel.mention}")
-    shells.append(channel.id)
+    shells[channel.id] = create_shell()
 
 @bot.command()
 async def exit(ctx):
     if ctx.channel.id in shells:
-        shells.remove(ctx.channel.id)
+        shells[ctx.channel.id].terminate()
+        
+        try:
+            shells[ctx.channel.id].wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            shells[ctx.channel.id].kill()
+            
+        del shells[ctx.channel.id]
         await ctx.channel.delete()
+
+      
     else:
         await ctx.send("This command cannot be executed outside of a shell channel")
 
