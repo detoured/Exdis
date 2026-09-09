@@ -47,7 +47,7 @@ def create_shell():
 
 async def check_role(message):
     for role in message.author.roles:
-        if(str(role.id) == str(perm_role)):
+        if(str(role.id) == str(perm_role_id)):
             return True
     await message.channel.send(f"{message.author.mention} You do not have permission to use Exdis")
     return False
@@ -55,8 +55,20 @@ async def check_role(message):
         
 
 load_dotenv()
-token = os.getenv('DISCOED_TOKEN')
-perm_role = os.getenv('ROLE_ID')
+try:
+    token = os.getenv('DISCOED_TOKEN')
+except:
+    print("Exdis cannot be used without assigning a Discord bot token to the .env file")
+    sys.exit(1)
+try:
+    perm_role_id = os.getenv('ROLE_ID')
+except:
+    print("Exdis cannot be used without assigning an access role id to the .env file")
+    sys.exit(1)
+try:
+    non_role_view = os.getenv('NON_ACCESS_ROLE_VIEW_PERM')
+except:
+    non_role_view = False
 
 handler = logging.FileHandler(filename="bot.log",encoding='utf-8',mode='w')
 intents = discord.Intents.default()
@@ -75,7 +87,7 @@ async def on_message(message):
     if message.author == bot.user:
         return 
 
-    if message.channel.id in shells and message.content not in commands_list and await check_role(message):
+    if message.channel.id in shells and message.content not in commands_list:
         await run_command(message, message.channel.id)
 
     await bot.process_commands(message)
@@ -87,7 +99,12 @@ async def start(ctx):
         if ctx.channel.id in shells:
             await ctx.send("This command cannot be executed in a shell channel")
             return
-        channel = await ctx.guild.create_text_channel(name="shell")
+        overwrites = {}
+        if not non_role_view:
+            perm_role_obj = ctx.guild.get_role(int(perm_role_id))
+            overwrites = { ctx.guild.default_role: discord.PermissionOverwrite(view_channel=False),
+                            perm_role_obj: discord.PermissionOverwrite(view_channel=True, send_messages=True)}
+        channel = await ctx.guild.create_text_channel(name="shell", overwrites=overwrites)
         await ctx.send(f"{ctx.author.mention} - New shell: {channel.mention}")
         shells[channel.id] = create_shell()
 
@@ -119,9 +136,6 @@ async def stop(ctx):
             await ctx.channel.send("Stopping Exdis")
             sys.exit(0)
 
-
-
-       
 
 
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)

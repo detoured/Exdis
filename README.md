@@ -9,7 +9,7 @@ A Discord bot for remotely executing shell commands.
 ```
 # Make a discord bot with the message content intent and save its token
 
-# Create an acess role for the bot and save its id
+# Create an access role for the bot and save its id
 
 # Clone the repository
 git clone https://github.com/detoured/Exdis
@@ -20,7 +20,7 @@ cd Exdis
 # Sync uv
 uv sync
 
-# Create .env file with the Discord bot token and the acess role id
+# Create .env file with the Discord bot token and the access role id
 echo -e "DISCOED_TOKEN={token}\nROLE_ID={id}" > .env
 
 # start the bot
@@ -48,8 +48,13 @@ Remove & exit a shell channel (must be sent in a shell channel):
 
   To execute commands simply send them in a shell channel.
 
-## Acess Role
-Those who arent assigned the acess role will not be able to use commands. However, they WILL be able to see shell channels and all of their content
+## Access Role
+Those who arent assigned the access role will not be able to use commands.\
+By default, those who arent assigned the access role will not be able to view shell channels and their content. However, if you would like them to see the channels and their content execute:
+```
+echo "NON_ACCESS_ROLE_VIEW_PERM=True" | tee -a .env
+```
+before running the bot.
 
 ## Disclaimer
 This project is intended for educational and authorized use only. Do not use this software to access, control, or interfere with systems, networks, or devices without explicit permission from the owner. I am not responsible for any misuse, damage, or illegal activity resulting from the use of this project. By using this software, you accept full responsibility for ensuring that your use complies with all applicable laws and regulations.
