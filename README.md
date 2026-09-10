@@ -20,6 +20,9 @@ cd Exdis
 # Sync uv
 uv sync
 
+# Navigate to the scripts directory
+cd scripts
+
 # Create .env file with the Discord bot token and the access role id
 echo -e "DISCOED_TOKEN={token}\nROLE_ID={id}" > .env
 
@@ -63,4 +66,4 @@ This project is intended for educational and authorized use only. Do not use thi
 
 ## Acknowledgements
 
-  Inspired by: [kaden-h](https://github.com/kaden-h)
+Inspired by: [kaden-h](https://github.com/kaden-h)

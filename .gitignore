@@ -1,5 +1,6 @@
 # Python-generated files
 __pycache__/
+scripts/__pycache__/
 *.py[oc]
 build/
 dist/
@@ -9,5 +10,8 @@ wheels/
 # Virtual environments
 .venv
 
+
 .env
+scripts/.env
 bot.log
+scripts/bot.log
