@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from command_functions import run_command, create_shell
+from command_functions import run_command, create_shell, find_shell_type
 import subprocess
 import logging
 from load_env import get_token, get_perm_role_id, get_non_role_view
@@ -11,7 +11,9 @@ token = get_token()
 perm_role_id = get_perm_role_id()
 non_role_view = get_non_role_view()
 
-bot , handler = make_bot(token)
+bot , handler = make_bot()
+
+shell_path = find_shell_type()
 
 shells = {}
 commands_list = ["!start","!exit","!stop"]
@@ -47,7 +49,9 @@ async def start(ctx):
             
         channel = await ctx.guild.create_text_channel(name="shell", overwrites=overwrites)
         await ctx.send(f"{ctx.author.mention} - New shell: {channel.mention}")
-        shells[channel.id] = create_shell()
+
+        print(shell_path)
+        shells[channel.id] = create_shell(shell_path)
 
 @bot.command()
 async def exit(ctx):
