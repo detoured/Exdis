@@ -13,7 +13,7 @@ non_role_view = get_non_role_view()
 
 bot , handler = make_bot()
 
-shell_path = find_shell_type()
+shell_path, is_windows = find_shell_type()
 
 shells = {}
 commands_list = ["!start","!exit","!stop"]
@@ -47,11 +47,10 @@ async def start(ctx):
             overwrites = { ctx.guild.default_role: discord.PermissionOverwrite(view_channel=False),
                             perm_role_obj: discord.PermissionOverwrite(view_channel=True, send_messages=True)}
             
-        channel = await ctx.guild.create_text_channel(name="shell", overwrites=overwrites)
+        channel = await ctx.guild.create_text_channel(name=f"shell - {shell_path[0]}", overwrites=overwrites)
         await ctx.send(f"{ctx.author.mention} - New shell: {channel.mention}")
 
-        print(shell_path)
-        shells[channel.id] = create_shell(shell_path)
+        shells[channel.id] = create_shell(shell_path,is_windows)
 
 @bot.command()
 async def exit(ctx):
